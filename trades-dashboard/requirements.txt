@@ -1,6 +1,0 @@
-streamlit>=1.33
-streamlit-autorefresh>=1.0.1
-pandas
-plotly
-python-dotenv
-requests
