@@ -56,7 +56,6 @@ if cat not in ["linear", "inverse"]:
 def _sign(payload: str) -> str:
     return hmac.new(API_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
-
 def bybit_get(path: str, params: dict | None = None):
     params = params or {}
     ts = str(int(time.time() * 1000))
@@ -74,7 +73,6 @@ def bybit_get(path: str, params: dict | None = None):
     r = requests.get(url, headers=hdrs, timeout=10)
     r.raise_for_status()
     return r.json()
-
 
 # ---------------------------------------------------------------------------
 # 3. Posição por símbolo
@@ -102,15 +100,10 @@ def fetch_position_symbol(symbol: str, category: str = "linear") -> pd.DataFrame
     rename = {
         "symbol": "Symbol",
         "side": "Side",
-        "size": "Qty",
-        "qty": "Qty",
-        "entryPrice": "Entry",
-        "markPrice": "Mark",
-        "unRealisedPnl": "uPnl",
-        "unrealisedPnl": "uPnl",
-        "leverage": "Lev",
-        "takeProfit": "TP",
-        "stopLoss": "SL",
+        "size": "Qty", "qty": "Qty",
+        "entryPrice": "Entry", "markPrice": "Mark",
+        "unRealisedPnl": "uPnl", "unrealisedPnl": "uPnl",
+        "leverage": "Lev", "takeProfit": "TP", "stopLoss": "SL",
     }
     df.rename(columns=rename, inplace=True)
 
@@ -136,7 +129,7 @@ def fetch_position_symbol(symbol: str, category: str = "linear") -> pd.DataFrame
         (df["uPnl"] / df["Investido (USDT)"] * 100).round(2),
         np.nan,
     )
-    def fmt_money(v):  # helper para incluir $ com separador de milhar
+    def fmt_money(v):
         return f"${v:,.2f}"
     df["uPnl"] = df.apply(
         lambda r: f"{fmt_money(r['uPnl'])} ({r['uPnlPct']:.2f} %)" if pd.notna(r["uPnl"]) else "",
@@ -151,12 +144,10 @@ def fetch_position_symbol(symbol: str, category: str = "linear") -> pd.DataFrame
             lev_str = f"{int(lev)}x" if float(lev).is_integer() else f"{lev}x"
             return f"{side} {lev_str}"
         return side
-
     df["Side"] = df.apply(fmt_side, axis=1)
     df.drop(columns=["Lev"], inplace=True, errors="ignore")
 
     return df
-
 
 # ---------------------------------------------------------------------------
 # 4. Agregador
@@ -170,7 +161,6 @@ def fetch_all_open_positions(symbols: list[str], category: str="linear") -> pd.D
     dfs = [fetch_position_symbol(s, category) for s in symbols]
     dfs = [d for d in dfs if not d.empty]
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
-
 
 # ---------------------------------------------------------------------------
 # 5. Interface
@@ -198,7 +188,7 @@ base_order = ["Symbol","Side","Investido (USDT)","Preço de Compra","Mark","uPnl
              + [c for c in ["TP","SL"] if c in df.columns]
 cols = [c for c in base_order if c in df.columns]
 
-# Formatação numérica com $
+# Formatos com $
 fmt = {
     "Investido (USDT)": "${:,.2f}",
     "Preço de Compra" : "${:,.4f}",
@@ -210,11 +200,12 @@ for k in fmt:
     if k in df.columns:
         df[k] = pd.to_numeric(df[k], errors="coerce")
 
-# Coloração verde/vermelho para uPnl
+# --- Coloração correta ------------------------------------------------------
 def _clr(val: str):
+    """Verde se positivo, vermelho se negativo."""
     if not isinstance(val, str) or val.strip() == "":
         return ""
-    return "color:#16c172;" if not val.strip().startswith('-') else "color:#e05d5d;"
+    return "color:#e05d5d;" if "-" in val else "color:#16c172;"
 
 styled = (
     df[cols]
@@ -223,7 +214,6 @@ styled = (
     .format(fmt, na_rep="-")
 )
 
-# Tabela
 row_h, head_h = 60, 60
 st.dataframe(
     styled,
