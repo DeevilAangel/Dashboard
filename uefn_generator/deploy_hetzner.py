@@ -133,6 +133,12 @@ def deploy(ip: str, root_pw: str):
     """Faz deploy completo da app no servidor via SSH."""
 
     if not ANTHROPIC_API_KEY:
+        # Em CI (GitHub Actions) não há input interativo
+        if os.environ.get("CI") or not sys.stdin.isatty():
+            raise ValueError(
+                "ANTHROPIC_API_KEY não definida! "
+                "Adiciona como GitHub Secret: Settings → Secrets → ANTHROPIC_API_KEY"
+            )
         print("\n⚠️  ANTHROPIC_API_KEY não definida!")
         ANTHROPIC_API_KEY_val = input("   Insere a tua ANTHROPIC_API_KEY: ").strip()
     else:
