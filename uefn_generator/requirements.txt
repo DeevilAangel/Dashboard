@@ -1,0 +1,4 @@
+streamlit>=1.33
+anthropic>=0.25
+python-dotenv
+paramiko
