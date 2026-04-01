@@ -1,0 +1,49 @@
+name: 🗺️ Deploy UEFN Map Generator → Hetzner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: ✅ Checkout código
+        uses: actions/checkout@v4
+        with:
+          ref: claude/uefn-ai-map-generator-6yFCa
+
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 📦 Instalar dependências de deploy
+        run: pip install requests paramiko
+
+      - name: 🚀 Deploy para Hetzner
+        id: deploy
+        env:
+          HETZNER_TOKEN: ${{ secrets.HETZNER_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          cd uefn_generator
+          python deploy_hetzner.py 2>&1 | tee /tmp/deploy_output.txt
+          IP=$(grep -oP '(?<=http://)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(?=:8501)' /tmp/deploy_output.txt | head -1)
+          if [ -n "$IP" ]; then
+            echo "app_url=http://${IP}:8501" >> "$GITHUB_OUTPUT"
+            echo "server_ip=${IP}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🌐 URL da App
+        run: |
+          echo ""
+          echo "============================================"
+          echo "  ✅  UEFN AI Map Generator está disponível!"
+          echo "  🌐  URL: ${{ steps.deploy.outputs.app_url }}"
+          echo "  🖥️  Servidor IP: ${{ steps.deploy.outputs.server_ip }}"
+          echo "============================================"
+          echo ""
+          echo "Para ver a app: abre o URL acima no browser"
+          echo "Para gerir o servidor: acede ao painel Hetzner"
